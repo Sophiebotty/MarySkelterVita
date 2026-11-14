@@ -1,0 +1,67 @@
+# .gitignore - MarySkelterVita (Vita Dungeon Renderer)
+#
+# Excludes generated build output and binaries only. Source code,
+# CMakeLists.txt, build.sh, documentation, tests, tools, sce_sys/ metadata
+# and the text/source contents of backups/ stay tracked.
+#
+# NOTE: binary patterns below apply everywhere, including backups/ and
+# crash-builds/. Those binaries remain on disk untouched; they are simply
+# not stored in Git.
+
+# ---- CMake build output -----------------------------------------------------
+/build/
+/build-*/
+/out/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# ---- Vita build products ----------------------------------------------------
+*.vpk
+*.velf
+*.self
+eboot.bin
+*.vpk.out
+eboot.bin.out
+*_param.sfo
+# ELF executable produced by add_executable() (no file extension)
+VitaDungeonTest
+
+# ---- Object files, libraries, executables -----------------------------------
+*.o
+*.obj
+*.a
+*.elf
+*.so
+*.exe
+*.dll
+
+# ---- Crash dumps (binary; may contain memory contents) ----------------------
+*.psp2dmp
+
+# ---- Logs and temporary files -----------------------------------------------
+*.log
+*.tmp
+*.temp
+
+# ---- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+
+# ---- Editor temporary files -------------------------------------------------
+*.swp
+*.swo
+*~
+.*.un~
+.idea/
+.vs/
+
+# ---- Operating-system metadata ----------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
