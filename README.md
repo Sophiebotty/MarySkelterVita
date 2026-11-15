@@ -70,10 +70,6 @@ All archive-format experiments currently use synthetic test fixtures rather than
 - [ ] Investigate authorized access to original technical resources.
 - [ ] Evaluate the feasibility of a full adaptation.
 
-## 🤖 Development Assistance
-
-AI tools assisted with research, technical planning, code development, and debugging. The development process includes all project decisions, testing, and hardware validation.
-
 ## ⚠️ Disclaimer
 
 MarySkelterVita is an unofficial, independent fan project.
