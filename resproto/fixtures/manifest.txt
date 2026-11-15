@@ -1,0 +1,5 @@
+# kind file raw_size crc32 stored_size   (container: kind file entry_count)
+stream pc_text.z 262144 97595f24 88334
+stream pc_random.z 262144 eef34dcf 262230
+stream pc_zero.z 262144 e20eea22 277
+container pc_container.vrp 5

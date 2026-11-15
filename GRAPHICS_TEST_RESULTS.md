@@ -15,9 +15,9 @@
 | ID | Build | MSAA | Location | SHA-256 (first 16) | How the MSAA setting was checked |
 |---|---|---|---|---|---|
 | **B0** | Tested phase 5 VPK (reference) | 0 (off) | `MarySkelterVita/build/VitaDungeonTest.vpk` | `1676a1bbc6702b53` | Owner-tested in phase 5 |
-| B0r | Rebuild, MSAA off (control) | 0 | `C:\Users\Sophie\MarySkelterVita-test-builds\2026-11-14-msaa0\VitaDungeonTest.vpk` | `74fad2f8dc8120b0` | No `SDL_GL_SetAttribute` call compiled in |
-| **B2** | Experimental, MSAA 2x | 2 | `C:\Users\Sophie\MarySkelterVita-test-builds\2026-11-14-msaa2\VitaDungeonTest.vpk` | `82e6590abc79ec7f` | `SDL_GL_SetAttribute(14 = MULTISAMPLESAMPLES, 2)` in `main()` |
-| **B4** | Experimental, MSAA 4x | 4 | `C:\Users\Sophie\MarySkelterVita-test-builds\2026-11-14-msaa4\VitaDungeonTest.vpk` | `1bdc3465c8e308c4` | `SDL_GL_SetAttribute(14 = MULTISAMPLESAMPLES, 4)` in `main()` |
+| B0r | Rebuild, MSAA off (control) | 0 | `%USERPROFILE%\MarySkelterVita-test-builds\2026-11-14-msaa0\VitaDungeonTest.vpk` | `74fad2f8dc8120b0` | No `SDL_GL_SetAttribute` call compiled in |
+| **B2** | Experimental, MSAA 2x | 2 | `%USERPROFILE%\MarySkelterVita-test-builds\2026-11-14-msaa2\VitaDungeonTest.vpk` | `82e6590abc79ec7f` | `SDL_GL_SetAttribute(14 = MULTISAMPLESAMPLES, 2)` in `main()` |
+| **B4** | Experimental, MSAA 4x | 4 | `%USERPROFILE%\MarySkelterVita-test-builds\2026-11-14-msaa4\VitaDungeonTest.vpk` | `1bdc3465c8e308c4` | `SDL_GL_SetAttribute(14 = MULTISAMPLESAMPLES, 4)` in `main()` |
 
 - **Build process:** all three experimental builds were made from `da1b09e` in separate temporary build folders, with no source changes. Each compiled with 0 warnings and 0 errors.
 - **Debug files:** each experimental folder also holds the matching unstripped ELF (`VitaDungeonTest`) for crash analysis.

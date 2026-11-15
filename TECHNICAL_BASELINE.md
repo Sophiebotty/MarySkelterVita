@@ -317,7 +317,7 @@ The face-button names assume SDL's built-in "PSVita Controller" mapping (`y:b0, 
 Run these in **WSL Ubuntu**, not Git Bash; Git Bash rewrites paths.
 
 ```bash
-cd /mnt/c/Users/Sophie/OneDrive/Desktop/MarySkelterVita
+cd /mnt/c/path/to/MarySkelterVita
 ```
 ```bash
 ./build.sh
