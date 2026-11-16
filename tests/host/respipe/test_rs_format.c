@@ -19,7 +19,10 @@
  *      rejected) and "fix" (CRCs and the table-of-contents row made
  *      consistent, so the structural checks are reached);
  *   7. synthetic resources at each limit of sections 5.3-5.8 and one step
- *      past it (sizes, counts, floats, start cell, policy, totals).
+ *      past it (sizes, counts, floats, start cell, policy, totals);
+ *   8. synthetic packs for the section 8.2 slot rule (rs_synth.c): a table
+ *      of contents larger than every resource, the one-byte tie boundary,
+ *      and rows declaring 32-byte payloads, with and without the room rule.
  * Every result is also written to argv[1] for compare_rs_results.py, which
  * compares it with expected.json, RESOURCE_PIPELINE.md and the independent
  * Python checker. Exit status 0 only when every check passed.
@@ -38,6 +41,7 @@
 #include "rs_gl_capture.h"
 #include "rs_host_pipe.h"
 #include "rs_host_plat.h"
+#include "rs_synth.h"
 
 #if !defined(MAIN_START_X) || !defined(MAIN_START_Z)
 #error "build with -DMAIN_START_X / -DMAIN_START_Z taken from src/main.c"
@@ -337,8 +341,9 @@ static void valid_packs(void)
         check(r.code == 0 && r.n == p->entries && r.vram == p->vram_bytes && r.heap_need == p->heap_need,
               "%s: entries %u vram %u heap need %llu (fixture %u %u %u)", p->path, r.n, r.vram,
               (unsigned long long)r.heap_need, p->entries, p->vram_bytes, p->heap_need);
-        check(r.toc_inflated <= r.max_inflated, "%s: the table of contents (%u) is larger than U (%u)", p->path,
-              r.toc_inflated, r.max_inflated);
+        check(r.max_inflated == (r.row_inflated > r.toc_inflated ? r.row_inflated : r.toc_inflated),
+              "%s: U %u is not max(largest row %u, table of contents %u) (section 8.2)", p->path, r.max_inflated,
+              r.row_inflated, r.toc_inflated);
         check(!t.bad, "%s: texture level accessors", p->path);
         fprintf(g_out, "PACK %s %d %d %s %u %u %llu\n", p->path, code, entry, stage, r.n, r.vram,
                 (unsigned long long)r.heap_need);
@@ -803,6 +808,40 @@ static void boundaries(void)
     printf("  boundaries: %d of %d give the expected result\n", ok, n);
 }
 
+/* ------------------------------------------------------------------ 8. synthetic packs */
+/* The section 8.2 slot rule: built here (rs_synth.c), run with and without the room rule. */
+static void synth_packs(void)
+{
+    rs_synth_case sc[RS_SYNTH_CASES];
+    int i, mode, ok = 0, runs = 0;
+    if (rs_synth_build_all(sc) != 0) {
+        check(0, "building the synthetic packs failed");
+        return;
+    }
+    for (i = 0; i < RS_SYNTH_CASES; i++) {
+        for (mode = 1; mode >= 0; mode--) {
+            rs_pipe_result r;
+            const int want_code = mode ? sc[i].policy_code : sc[i].format_code;
+            const int want_entry = mode ? sc[i].policy_entry : sc[i].format_entry;
+            int good;
+            rs_pipe_run(sc[i].path, mode, 0, NULL, NULL, &r);
+            good = r.code == want_code && r.entry == want_entry && r.max_inflated == sc[i].expect_u &&
+                   r.row_inflated == sc[i].rows_only_u && r.toc_inflated == sc[i].toc_inflated;
+            check(good, "%s (%s): %d %s entry %d (%s), U %u rows %u Ut %u; expected %d entry %d, U %u", sc[i].name,
+                  mode ? "policy" : "format", r.code, rs_pipe_status_name(r.code), r.entry, r.check, r.max_inflated,
+                  r.row_inflated, r.toc_inflated, want_code, want_entry, sc[i].expect_u);
+            ok += good;
+            runs++;
+            fprintf(g_out, "SYNTH %s %s %d %d %s %u\n", sc[i].path, mode ? "policy" : "format", r.code, r.entry,
+                    stage_or_dash(&r), r.max_inflated);
+            printf("  %-15s %-6s %3d %-22s entry %2d  U %4u (rows alone %4u, table %4u)\n", sc[i].name,
+                   mode ? "policy" : "format", r.code, r.code ? rs_pipe_status_name(r.code) : "OK", r.entry,
+                   r.max_inflated, r.row_inflated, r.toc_inflated);
+        }
+    }
+    printf("  synthetic packs: %d of %d runs as expected\n", ok, runs);
+}
+
 /* ------------------------------------------------------------------ 5. file-level flips */
 typedef struct { unsigned runs, rejected, codes[512]; } flip_tally;
 
@@ -1000,6 +1039,8 @@ int main(int argc, char **argv)
     print_tally("entry level", &f_entry);
     printf("### 7. boundaries of sections 5.3-5.8\n");
     boundaries();
+    printf("### 8. synthetic packs: the section 8.2 slot rule\n");
+    synth_packs();
 
     check(rs_host_plat_calls() == 0, "the inert platform stand-ins were called %d times", rs_host_plat_calls());
     fclose(g_out);

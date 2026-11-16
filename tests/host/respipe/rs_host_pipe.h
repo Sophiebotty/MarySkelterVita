@@ -9,8 +9,9 @@
  * The worker steps B1-B6 are run on the calling thread, in the order of
  * contentfit/src/cf_pack.c's worker; the background reader itself and memory
  * pre-checks (A6, A7) belong to stage 10.4 and are not used here.
- * Slot sizes follow A7 literally: R = largest region, U = largest
- * table-of-contents payload_size + 32.
+ * Slot sizes follow section 8.2 (and A7, which refers to it): R = largest
+ * region, U = max(largest payload_size, 48 + 32 x entry_count) + 32, so the
+ * table of contents, entry 0, always fits a slot's output buffer.
  */
 #ifndef RS_HOST_PIPE_H
 #define RS_HOST_PIPE_H
@@ -25,8 +26,9 @@ typedef struct {
     int         entry;          /* GDAT entry of the failure; -1 = the archive itself, or none */
     const char *stage;          /* "open" (6.1 A), "entry" (6.1 B/C), "" if accepted */
     char        check[112];     /* the failing check (rs_format diagnostic, CFP1 field, or module) */
-    /* filled once A4 passed */
+    /* filled once A5 passed */
     uint32_t    n, vram, heap_total, max_region, max_inflated, toc_region, toc_inflated;
+    uint32_t    row_inflated;   /* largest row payload_size + 32 (the resources alone) */
     uint64_t    heap_need;      /* section 8.2 with 3 slots */
 } rs_pipe_result;
 

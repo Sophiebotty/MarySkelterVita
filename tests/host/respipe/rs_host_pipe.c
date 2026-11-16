@@ -114,6 +114,10 @@ int rs_pipe_run(const char *path, int apply_policy, uint32_t first_entry, rs_pip
         if (row.payload_size + RS_ENVELOPE_BYTES > big_u)
             big_u = row.payload_size + RS_ENVELOPE_BYTES;
     }
+    res->row_inflated = big_u;
+    /* 8.2: U = max(largest payload_size, 48 + 32 x entry_count) + 32 */
+    if (48u + 32u * toc.entry_count + RS_ENVELOPE_BYTES > big_u)
+        big_u = 48u + 32u * toc.entry_count + RS_ENVELOPE_BYTES;
     res->n = a.count;
     res->vram = toc.total_vram_bytes;
     res->heap_total = toc.total_heap_bytes;

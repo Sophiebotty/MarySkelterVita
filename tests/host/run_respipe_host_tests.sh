@@ -10,7 +10,8 @@
 #      level_mesh_build(), and every header byte flipped (file and entry level)
 #   3. compare_rs_results.py: every result against expected.json,
 #      RESOURCE_PIPELINE.md and the independent Python checker
-#   4. git: no tracked file changed (prototypes, ContentFit, renderer, spec)
+#   4. git: no protected tracked file changed (prototypes, ContentFit,
+#      renderer, rs_format, tools, specification)
 # The sanitizer build is mandatory; any sanitizer report fails the run.
 # Exit status is non-zero if anything fails.
 #
@@ -61,7 +62,7 @@ REUSED="$ROOT/gdatproto/src/gp_common.c $ROOT/gdatproto/src/gp_gdat.c $ROOT/gdat
 $ROOT/resproto/src/rp_io.c $ROOT/resproto/src/rp_inflate.c \
 $ROOT/contentfit/src/cf_pack.c $ROOT/contentfit/src/cf_zinflate.c $ROOT/contentfit/src/cf_common.c \
 $ROOT/src/gameplay/room_map.c $ROOT/src/graphics/level_mesh.c"
-TESTS="$TH/test_rs_format.c $TH/rs_host_pipe.c $TH/rs_host_plat.c $TH/rs_gl_capture.c"
+TESTS="$TH/test_rs_format.c $TH/rs_host_pipe.c $TH/rs_host_plat.c $TH/rs_gl_capture.c $TH/rs_synth.c"
 
 echo "### 1. warnings-as-errors compiles"
 STRICT="-Wall -Wextra -Werror -Wshadow -Wconversion -Wsign-conversion -Wcast-qual -Wstrict-prototypes"
@@ -111,17 +112,28 @@ cp "$T/results.txt" "${RS_HOST_REPORT_DIR:-$T}/respipe_10_3_results.txt" 2>/dev/
 
 echo "### 3. results against expected.json, RESOURCE_PIPELINE.md and the Python checker"
 start=$(date +%s)
-python3 -I -B "$TH/compare_rs_results.py" --results "$T/results.txt" --fixture-dir "$FIX" > "$T/compare.txt" 2>&1 ||
-    fail "compare_rs_results.py"
+python3 -I -B "$TH/compare_rs_results.py" --results "$T/results.txt" --fixture-dir "$FIX" --work-dir "$W" \
+    > "$T/compare.txt" 2>&1 || fail "compare_rs_results.py"
 sed 's/^/    /' "$T/compare.txt" | head -60
 echo "    ($(( $(date +%s) - start )) s)"
 
-echo "### 4. git: no tracked file changed"
-if git -C "$ROOT" diff --quiet HEAD --; then
-    echo "    no tracked file changed (prototypes, ContentFit, renderer, specification)"
+echo "### 4. git: protected files unchanged"
+# Only the ResPipe test files that stage 10.4 may update can differ from the last commit;
+# prototypes, ContentFit, the renderer, rs_format, the tools and the specification may not.
+ALLOWED="tests/host/respipe/rs_host_pipe.c tests/host/respipe/rs_host_pipe.h tests/host/respipe/test_rs_format.c \
+tests/host/respipe/compare_rs_results.py tests/host/run_respipe_host_tests.sh"
+bad=""
+for f in $(git -C "$ROOT" diff --name-only HEAD --); do
+    case " $ALLOWED " in
+        *" $f "*) ;;
+        *) bad="$bad $f" ;;
+    esac
+done
+if [ -z "$bad" ]; then
+    echo "    no protected tracked file changed (prototypes, ContentFit, renderer, rs_format, tools, specification)"
 else
-    git -C "$ROOT" diff --stat HEAD
-    fail "tracked files changed"
+    echo "    changed:$bad"
+    fail "protected tracked files changed"
 fi
 
 if [ "$FAILED" -ne 0 ]; then
