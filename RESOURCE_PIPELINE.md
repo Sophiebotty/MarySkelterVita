@@ -460,7 +460,7 @@ There is no lenient mode, and the first failure wins. Every size is checked befo
 4. Common header checks (6.2), then the table-of-contents checks (6.3).
 5. For every entry *i* ≥ 1, with *U*ᵢ = `payload_size` + 32: the region is at most 8 MiB, and region − 0x90 ≤ *U*ᵢ + (*U*ᵢ >> 10) + 64 (`RS_ERR_LIMIT`).
 6. `cf_precheck` with the needs from section 8.2. On failure: `CF_ERR_SKIPPED` or `CF_ERR_UNKNOWN_SIZE`.
-7. `cf_ring_start`: *S* slots of *R* + *U* bytes each, where *R* is the largest region and *U* the largest `payload_size` + 32; inflation on the worker. On failure: `RP_ERR_NOMEM`, `RP_ERR_OPEN` or `CF_ERR_THREAD`.
+7. `cf_ring_start`: *S* slots of *R* + *U* bytes each, with *R* and *U* as defined in section 8.2 (*U* also covers the table of contents, which passes through a slot as entry 0); inflation on the worker. On failure: `RP_ERR_NOMEM`, `RP_ERR_OPEN` or `CF_ERR_THREAD`.
 
 **B. For each entry, on the worker (unmodified ContentFit and GDAT Proto code)**
 1. The region size must not exceed the slot buffer (`RP_ERR_LIMIT`).
@@ -697,7 +697,7 @@ Nothing from an interrupted load is ever drawn, and no CFP1 envelope, slot or GL
 ### 8.2 What a pack needs (the CFP1 envelope included)
 - *N* = entry count;
 - *R* = the largest region size (144 + *Z*);
-- *U* = the largest inflated size, = largest `payload_size` + 32;
+- *U* = the largest inflated size of any entry, the table of contents included: max(largest `payload_size`, 48 + 32 × entry_count) + 32. Both terms are VRS1 payload sizes (header and body); the 32 is the one CFP1 envelope each inflated entry carries. So *U* ≥ *Ut*, and *U* ≤ 8 MiB;
 - *S* = the number of slots;
 - *Rt*, *Ut* = the table of contents' region and inflated size (*Ut* = 80 + 32 × entry_count).
 
@@ -995,3 +995,4 @@ All changes are to the envelope of entry 1 (the texture) unless stated.
 | 2026-11-16 | Approved by the owner. Only the two status lines at the top and this row changed; the format, rules, codes, limits and examples are exactly those of the second draft |
 | 2026-11-16 | Clarified 6.1 C.3: format compared in step 7. No change to the format, limits or which packs are accepted |
 | 2026-11-16 | Status line updated after stages 10.2 and 10.3. No change to the format, rules, codes or limits |
+| 2026-11-16 | Clarified 8.2 and 6.1 A7: a slot's output buffer *U* also holds the table of contents (entry 0). No change to the VRS1 format, codes or limits; a pack whose table of contents is larger than every resource now fits its slots instead of failing at B4 |
