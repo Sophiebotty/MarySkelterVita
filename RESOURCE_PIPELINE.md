@@ -1,6 +1,6 @@
 # Vita ResPipe: resource pipeline and the VRS1 format (Phase 10)
 
-**Status:** approved specification (stage 10.1, approved on 2026-11-16). Implemented and tested on the PC so far: the stage 10.2 fixtures and independent checker, and the stage 10.3 format checks (`src/resource/rs_format.c`). No loader, Vita build or package exists yet.
+**Status:** approved specification (stage 10.1, approved on 2026-11-16). Implemented and tested on the PC so far: the stage 10.2 fixtures and independent checker, the stage 10.3 format checks (`src/resource/rs_format.c`) and the stage 10.4 loader (`src/resource/rs_loader.c`). No GL upload, Vita build or package exists yet.
 **Format version:** VRS1 version 1, frozen since its approval on 2026-11-16 (see section 12).
 **Application:** Vita ResPipe, title ID `VDNG00006`, version 01.00. It is separate from VDNG00001–00005, which stay unchanged.
 **Content:** synthetic only. VRS1 is an original format made for this project. No Mary Skelter Finale file, format or asset is read, imitated or described here.
@@ -89,7 +89,7 @@ app0:fixtures/<pack>.gdat
   - GDAT Proto: `gp_common`, `gp_gdat`, `gp_wrap`;
   - ContentFit: `cf_pack` (the ring reader and CFP1 check), `cf_zinflate`, `cf_budget`, `cf_stats`, `cf_common` (section 4.8);
   - the renderer modules listed above.
-- **New, in `src/resource/`:** `rs_format`, `rs_texture`, `rs_mesh`, `rs_area`. The main app's `CMakeLists.txt` does not list them, so VDNG00001 is unaffected.
+- **New, in `src/resource/`:** `rs_format`, `rs_loader` (section 6.1 steps A, B through `cf_ring`, C.1–C.3, C.5 and D; it hands each checked resource to its caller for the C.4 upload and makes no GL call itself), `rs_texture`, `rs_mesh`, `rs_area`. The main app's `CMakeLists.txt` does not list them, so VDNG00001 is unaffected.
 - **New, app-specific, in `respipe/` (approved, about 190 lines):**
   - the Vita platform functions that `cf_pack` needs (raw reads, threads, semaphores), with ResPipe's read allowlist;
   - the shader-cache redirect to `ux0:data/ResPipe/shader_cache`;
@@ -996,3 +996,4 @@ All changes are to the envelope of entry 1 (the texture) unless stated.
 | 2026-11-16 | Clarified 6.1 C.3: format compared in step 7. No change to the format, limits or which packs are accepted |
 | 2026-11-16 | Status line updated after stages 10.2 and 10.3. No change to the format, rules, codes or limits |
 | 2026-11-16 | Clarified 8.2 and 6.1 A7: a slot's output buffer *U* also holds the table of contents (entry 0). No change to the VRS1 format, codes or limits; a pack whose table of contents is larger than every resource now fits its slots instead of failing at B4 |
+| 2026-11-16 | Section 3 lists `rs_loader` (stage 10.4); status line updated. No change to the format, rules, codes or limits |
