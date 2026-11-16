@@ -1,6 +1,6 @@
 # Vita ResPipe: resource pipeline and the VRS1 format (Phase 10)
 
-**Status:** approved specification (stage 10.1, approved on 2026-11-16). Nothing described here is implemented yet. No fixtures, loader code or packages exist.
+**Status:** approved specification (stage 10.1, approved on 2026-11-16). Implemented and tested on the PC so far: the stage 10.2 fixtures and independent checker, and the stage 10.3 format checks (`src/resource/rs_format.c`). No loader, Vita build or package exists yet.
 **Format version:** VRS1 version 1, frozen since its approval on 2026-11-16 (see section 12).
 **Application:** Vita ResPipe, title ID `VDNG00006`, version 01.00. It is separate from VDNG00001–00005, which stay unchanged.
 **Content:** synthetic only. VRS1 is an original format made for this project. No Mary Skelter Finale file, format or asset is read, imitated or described here.
@@ -994,3 +994,4 @@ All changes are to the envelope of entry 1 (the texture) unless stated.
 | 2026-11-15 | Second draft. Added: CFP1's full layout, version, size and checksum rules; the complete nesting order; CFP1 in every size and memory figure; a region limit of 8 MiB; per-layer error handling; interrupted loads; the confirmation that ContentFit is reused unchanged; valid and invalid CFP1 examples; a separate application-policy section, so the VRS1-valid 3×3 level is distinguished from ResPipe's room rule; error code 320. Output folder confirmed as `ux0:data/ResPipe/`. Removed the "at most one level per pack" rule, since the room policy already covers levels |
 | 2026-11-16 | Approved by the owner. Only the two status lines at the top and this row changed; the format, rules, codes, limits and examples are exactly those of the second draft |
 | 2026-11-16 | Clarified 6.1 C.3: format compared in step 7. No change to the format, limits or which packs are accepted |
+| 2026-11-16 | Status line updated after stages 10.2 and 10.3. No change to the format, rules, codes or limits |
