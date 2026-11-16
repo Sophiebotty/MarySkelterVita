@@ -34,7 +34,9 @@ The 60 FPS measurements were diagnostic only.
 
 All recorded result rows reported `OK`. The progress log records
 completion after 1,513.4 seconds. The three iterations produced
-consistent scene verdicts and content checksums.
+consistent scene verdicts and content checksums. The run's own
+repeatability check (C5-01) compared the 96 rows of each iteration on
+ID, mode, status, result and check value and found 0 differences.
 
 ## 3. Test environment
 
@@ -43,7 +45,8 @@ GPU crossbar: 111 MHz - Battery: 99%, not charging - vitaGL VRAM pool:
 96 MiB total, 83.9 MiB free - vitaGL RAM pool: 100 MiB total, 63.5 MiB
 free - vitaGL PHYCONT pool: 26 MiB total, approximately 26 MiB free - C
 library heap block: 128 MiB, approximately 127.9 MiB free at the initial
-snapshot - Kernel USER_RW free memory: 12 MiB
+snapshot - Kernel USER_RW free memory: 12 MiB - Free space on UX0:
+unknown (the free-space query failed and was logged as -1)
 
 These are snapshots reported by the test application and its
 memory-query methods. Pool values are not interchangeable and should not
@@ -97,26 +100,38 @@ stable: - No intervals above 34 ms in the reported 300-frame scene
 samples. - No intervals above 51 ms. - P95 locked frame intervals were
 approximately 33.41--33.42 ms.
 
-The separate 60 FPS diagnostic was marginally over the 16.7 ms frame
-budget: P95 was approximately 16.73--16.74 ms, and 61--74 of 300
-intervals per iteration exceeded 16.7 ms. This supports prioritizing 30
-FPS rather than treating 60 FPS as a target.
+The separate 60 FPS diagnostic (dungeon M at swap interval 1) ran at
+the display's refresh period: the median interval was 16.68 ms, P95 was
+16.73--16.74 ms, and the longest interval was 16.74--16.78 ms in each
+iteration. No interval came close to a missed refresh (about 33.4 ms).
+The 61--74 of 300 intervals per iteration that exceeded 16.7 ms did so
+by less than 0.1 ms; this is timer variation around the 16.68 ms
+refresh period, not missed frames. ContentFit labelled the diagnostic
+`DIAG_60_OK` (P95 no greater than 17.4 ms: 16.7 ms plus the same 0.7 ms
+timer allowance used by the 30 FPS rule). It remains diagnostic only:
+30 FPS is the chosen target, and the heaviest synthetic scene
+(`BATTLE_XL`, about 16.3 ms) leaves no headroom at 60 FPS.
 
 ## 5. Storage and file I/O
 
 The benchmark read a 16 MiB synthetic file and verified matching CRC
 values.
 
-Representative average results across iterations:
+Range across the three iterations (1 MiB = 1,048,576 bytes):
 
   Method                                  Approximate throughput
   ------------------------------------- ------------------------
-  Standard I/O, 16 KiB--4 MiB buffers           2.56--2.57 MiB/s
-  Raw Vita I/O, 64 KiB--4 MiB buffers           9.35--9.73 MiB/s
+  Standard I/O, 16 KiB--4 MiB buffers           2.56--2.58 MiB/s
+  Raw Vita I/O, 64 KiB--4 MiB buffers           9.34--9.73 MiB/s
   Raw Vita I/O from UX0, 1 MiB buffer           9.81--9.82 MiB/s
   Standard I/O from UX0, 1 MiB buffer           2.86--2.87 MiB/s
   Sequential 512 × 16 KiB reads                       9.61 MiB/s
-  Random 512 × 16 KiB reads                     5.32--5.33 MiB/s
+  Random 512 × 16 KiB reads                     5.31--5.33 MiB/s
+  One-time 16 MiB copy, app0 to UX0                   1.77 MiB/s
+
+The one-time copy rate covers direct reads from app0 and standard-I/O
+writes to UX0; it was measured once, in iteration 1, when the copy was
+made.
 
 The raw I/O path was substantially faster than the standard I/O path in
 this test. Random small reads were slower than sequential reads, which
@@ -128,17 +143,19 @@ considerations.
 The test compared serial loading with a pipelined read/inflate path.
 Mean elapsed times across the three iterations:
 
-| Logical content size \| Serial \| Pipelined \|
-| 8 MiB \| 1.52 s \| 0.63 s \|
-| 16 MiB \| 3.04 s \| 1.12 s \|
-| 32 MiB \| 5.66 s \| 2.48 s \|
-| 64 MiB \| 11.53 s \| 4.86 s \|
+| Logical content size | Serial | Pipelined |
+|---|---|---|
+| 8 MiB | 1.52 s | 0.63 s |
+| 16 MiB | 3.04 s | 1.12 s |
+| 32 MiB | 5.66 s | 2.48 s |
+| 64 MiB | 11.53 s | 4.86 s |
 
 The 8 MiB battle-set load completed in approximately 0.63--0.64 seconds
 using the pipelined path, below the test's 2-second target. The 32 MiB
-area load completed in approximately 2.47 seconds pipelined, below the
-10-second target. The 64 MiB pack took approximately 4.85--4.87 seconds
-pipelined.
+area load completed in approximately 2.47--2.48 seconds pipelined,
+below the 10-second target. The 64 MiB pack took approximately
+4.85--4.87 seconds pipelined. The serial loads also met both targets
+(1.52 seconds and 5.66--5.67 seconds).
 
 The 2 MiB portrait swap completed in approximately 0.43 seconds, meeting
 its 0.5-second target.
@@ -152,14 +169,19 @@ guaranteed Finale loading times.
 The following synthetic allocation tests passed: - Resident RGBA8
 textures at 16, 32, 48, and 64 MiB. - Heap working sets at 16, 32, 64,
 and 96 MiB. - 20 repeated area load/unload cycles, with no measured
-drift in the tracked VRAM, GL RAM, or heap counters. - A 30-second
+drift in free VRAM, GL RAM or heap (largest drift 0 KiB), after which
+the 64 MiB VRAM tier was allocated again successfully. - A 30-second
 locked-30-FPS soak test using the medium battle scene while holding 48
 MiB of textures and a 64 MiB heap working set.
 
-The streaming test processed 228 entries and uploaded 90 textures while
-measuring 300 locked frame intervals. It reported no errors and no
-intervals above 34 ms. Average texture upload time was 2.09 ms; the
-worst reported upload was 6.66 ms.
+In each iteration, the streaming test processed 228 entries and
+uploaded 90 textures while measuring 300 locked frame intervals. It
+reported no errors and no intervals above 34 ms. Per iteration, the
+average texture upload took 2.09--2.16 ms and the slowest took
+6.24--6.66 ms.
+
+Every tracked allocation was released: 7,626 allocations and 7,626
+frees, 0 refused, and 0 bytes still allocated at the end of the run.
 
 The test's allocation guards and tracked counters are evidence about
 these specific benchmark allocations. They do not prove the complete
@@ -181,9 +203,14 @@ path:
 
 For the tested 8 × 256² texture scene with mipmaps, measured texture
 storage ranged from approximately 341 KiB for DXT1/ETC1 to approximately
-2,731 KiB for RGBA8. These tests establish format support in this
-application; they do not identify the formats used by Finale's original
-assets.
+2,731 KiB for RGBA8.
+
+The compressed formats were tested with synthetic random block data.
+"Supported" means that every mip level was accepted without a GL error
+and that the scene rendered at the measured cost. Whether each format
+decodes to the correct image was not checked. These tests establish
+that the formats upload and render in this application; they do not
+identify the formats used by Finale's original assets.
 
 ## 9. Shader-cache path redirection
 
@@ -192,18 +219,23 @@ to:
 
 `ux0:data/ContentFit/shader_cache`
 
-During the run, the application reported four folder creations and four
-file opens redirected from `ux0:data/shader_cache`, with zero refused
-paths. This verifies the tested redirect behavior on the device for the
-operations observed in this run.
+At the start of the run, the application reported four folder creations
+and four file opens redirected from `ux0:data/shader_cache`. By the end
+of the run, the totals were four folder creations and ten file opens,
+with zero refused paths. This verifies the tested redirect behavior on
+the device for the operations observed in this run. The log counts
+redirected calls, not their results; that the folder exists on the
+Vita can be confirmed in VitaShell.
 
 ## 10. Engineering implications
 
 The strongest results for the next development stage are:
 
 1.  **Keep 30 FPS as the primary target.** All tested synthetic scenes
-    met the benchmark's 30 FPS criteria. The 60 FPS diagnostic did not
-    consistently meet a 16.7 ms interval.
+    met the benchmark's 30 FPS criteria. The 60 FPS diagnostic held the
+    display's refresh rate for a light scene (dungeon M), but the
+    heaviest synthetic scene costs about 16.3 ms, which leaves no
+    headroom at 60 FPS.
 2.  **Prefer the raw Vita file-I/O path where appropriate.** It was
     substantially faster than standard I/O in these tests.
 3.  **Design for pipelined reads and decompression.** The synthetic
@@ -224,8 +256,10 @@ archive files or proprietary resource formats. - Compatibility with
 Finale's original shaders, materials, animation, or rendering effects. -
 Performance of Finale's actual scenes, characters, effects, UI, or
 battle logic. - Full-game memory use, audio/video playback, save
-behavior, or long-session stability. - Whether the game's assets can be
-legally or technically used in a Vita adaptation.
+behavior, or long-session stability. - Whether the compressed texture
+formats decode to the correct image. - GPU time: all timings are
+CPU-side intervals between frame starts. - Whether the game's assets
+can be legally or technically used in a Vita adaptation.
 
 The next technical validation should connect the tested file-I/O,
 decompression, and texture-upload path to the separately developed
@@ -237,6 +271,12 @@ actual game content must be separately authorized and documented.
 This report was prepared from the Run 001 result CSV, frame-interval
 CSV, runtime log, and progress log: - `run001.csv` -
 `run001_frames.csv` - `run001.log` - `run001_progress.txt`
+
+Every statistic in `run001.csv` was recomputed from the raw frame file
+with `tools/analyze_contentfit_results.py`: 184 checks, 0
+disagreements. The log does not record which package was installed;
+its shader-cache redirect lines show that it was a build with the
+redirect.
 
 **Conclusion:** ContentFit Run 001 passed on the tested Vita. The
 results provide a useful measured baseline for a 30 FPS-oriented Vita
